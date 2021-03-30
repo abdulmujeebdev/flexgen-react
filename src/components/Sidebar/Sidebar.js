@@ -23,22 +23,11 @@ import { PropTypes } from "prop-types";
 
 // reactstrap components
 import {
-  Button,
-  Card,
-  CardHeader,
-  CardBody,
-  CardTitle,
   Collapse,
   DropdownMenu,
   DropdownItem,
   UncontrolledDropdown,
   DropdownToggle,
-  FormGroup,
-  Form,
-  Input,
-  InputGroupAddon,
-  InputGroupText,
-  InputGroup,
   Media,
   NavbarBrand,
   Navbar,
@@ -46,7 +35,6 @@ import {
   NavLink,
   Nav,
   Progress,
-  Table,
   Container,
   Row,
   Col,
@@ -205,7 +193,19 @@ const Sidebar = (props) => {
           </div>
          
           {/* Navigation */}
-          <Nav navbar>{createLinks(routes)}</Nav>
+          <Nav navbar>
+          <NavItem>
+          <NavLink
+            to="/admin"
+            onClick={closeCollapse}
+            activeClassName="active"
+          >
+            <i className="ni ni-tv-2" />
+            Projects
+          </NavLink>
+        </NavItem>
+
+          </Nav>
           {/* Divider */}
           <hr className="my-3" />
           {/* Heading */}
