@@ -193,19 +193,7 @@ const Sidebar = (props) => {
           </div>
          
           {/* Navigation */}
-          <Nav navbar>
-          <NavItem>
-          <NavLink
-            to="/admin"
-            onClick={closeCollapse}
-            activeClassName="active"
-          >
-            <i className="ni ni-tv-2" />
-            Projects
-          </NavLink>
-        </NavItem>
-
-          </Nav>
+          <Nav navbar>{createLinks(routes)}</Nav>
           {/* Divider */}
           <hr className="my-3" />
           {/* Heading */}
