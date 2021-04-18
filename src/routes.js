@@ -22,6 +22,7 @@ import Register from "views/examples/Register.js";
 import Login from "views/examples/Login.js";
 import Tables from "views/examples/Tables.js";
 import Icons from "views/examples/Icons.js";
+import SchemaEditor from './views/SchemaEditor';
 
 var routes = [
   {
@@ -29,6 +30,13 @@ var routes = [
     name: "Dashboard",
     icon: "ni ni-tv-2 text-primary",
     component: Index,
+    layout: "/admin",
+  },
+  {
+    path: "/schema-editor",
+    name: "Schema Editor",
+    icon: "ni ni-tv-2 text-primary",
+    component: SchemaEditor,
     layout: "/admin",
   },
   {
