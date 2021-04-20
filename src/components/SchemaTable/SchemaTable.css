@@ -1,0 +1,38 @@
+.table-container {
+  border-radius: 10px;
+  background-color: #495467;
+}
+.table-header {
+  height: 10px;
+  border-radius: 10px 10px 0px 0px;
+  background-color: #38b2ac;
+}
+.white-text {
+  color: #ffffff;
+}
+
+.table-heading {
+  text-transform: capitalize;
+}
+.table-subheading {
+  font-size: 14px;
+  font-weight: 500;
+}
+.table-body {
+  padding: 12px 10px;
+}
+
+.field-container {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 6px;
+}
+
+.field-option {
+  margin-right: 14px;
+  color: #7b7b7b;
+}
+
+.active-color {
+  color: #38b2ac;
+}

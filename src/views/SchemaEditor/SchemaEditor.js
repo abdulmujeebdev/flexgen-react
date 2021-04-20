@@ -1,26 +1,13 @@
-import React, { useEffect } from "react";
-import { ReactDiagram } from "gojs-react";
+import React, { useState } from "react";
 import "./SchemaEditor.css";
-
+import { Button } from "react-bootstrap";
 import ConnectElements from "react-connect-elements";
+import TabelModal from '../../components/TableModal/TableModal';
+import SchemaTable from '../../components/SchemaTable/SchemaTable';
 
 const SchemaEditor = () => {
-  // return (
-  //   <div>
-  //     <div className="elements">
-  //       <div className="elements-row">
-  //         <div className="element element1" />
-  //       </div>
-  //       <div className="elements-row">
-  //         <div className="element element2" />
-  //       </div>
-  //     </div>
-  //     <ConnectElements
-  //       selector=".elements"
-  //       elements={[{ from: ".element1", to: ".element2" }]}
-  //     />
-  //   </div>
-  // );
+  const [show, setShow] = useState(false);
+
   return (
     <div>
       <div className="elements">
@@ -32,13 +19,18 @@ const SchemaEditor = () => {
               fields: userFields,
             }}
           />
+          <SchemaTable
+            className="element element3"
+            config={{
+              title: "category",
+              fields: userFields,
+            }}
+          />
         </div>
-        {/* <div className="elements-row"></div> */}
 
         <div className="elements-row">
           <div></div>
 
-          {/* <div className="element element2" /> */}
           <SchemaTable
             className="element element2"
             config={{
@@ -47,17 +39,6 @@ const SchemaEditor = () => {
             }}
           />
         </div>
-        {/* <div className="elements-row"></div> */}
-        <div className="elements-row">
-          <SchemaTable
-            className="element element3"
-            config={{
-              title: "category",
-              fields: userFields,
-            }}
-          />
-          <div></div>
-        </div>
       </div>
       <ConnectElements
         selector=".elements"
@@ -65,41 +46,16 @@ const SchemaEditor = () => {
         color="#ffffff"
         elements={[{ from: ".element1", to: ".element2" }]}
       />
+      <Button variant="primary" onClick={() => setShow(true)}>
+        Custom Width Modal
+      </Button>
+      <TabelModal show={show} setShow={setShow} />
     </div>
   );
 };
 
 export default SchemaEditor;
 
-const SchemaTable = ({ className, config }) => {
-  return (
-    <div className={`table-container ${className}`}>
-      <div className="table-header"></div>
-      <div className="table-body">
-        <h3 className="white-text table-heading">
-          {config.title}{" "}
-          <span className="table-subheading">(MODEL for {config.title}s)</span>
-        </h3>
-        {config.fields.length &&
-          config.fields.map((field, i) => (
-            <div className="field-container" key={`${field.title}${i}`}>
-              <div>
-                <b
-                  className={`field-option ${
-                    field.isNullable ? "active-color" : ""
-                  }`}
-                >
-                  N
-                </b>
-                <span className="white-text">{field.title}</span>
-              </div>
-              <span className="white-text">{field.type}</span>
-            </div>
-          ))}
-      </div>
-    </div>
-  );
-};
 
 const userFields = [
   {

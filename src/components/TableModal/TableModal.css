@@ -1,0 +1,67 @@
+.modal-container {
+  right: 0;
+  width: 600px;
+  height: 100vh;
+  position: fixed;
+  color: white;
+  background-color: #1a202d;
+  margin: 0px;
+}
+
+.modal-content {
+  background-color: transparent;
+  padding: 20px;
+}
+
+.modal-content h1, h5, h2, h3 {
+  color: white;
+}
+
+.content-row {
+  display: flex;
+  flex-direction: row;
+}
+
+.field-input-row {
+  align-items: center;
+}
+
+.field-options {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.null-option {
+  margin-right: 14px;
+  color: #7b7b7b;
+}
+
+.setting-icon, .primary-color {
+  color: #38b2ac;
+}
+
+.delete-icon {
+  color: #ff0000;
+}
+.delete-table {
+  position: absolute;
+  right: 20px;
+  top: 30px;
+}
+
+.add-title {
+  margin: 20px 0px;
+}
+
+.section-title {
+  margin: 30px 0px;
+}
+
+.line-breaker {
+  border-top: 2px solid #45484c;
+}
+
+.soft-delete-checkbox {
+  margin-left: 14px;
+}
