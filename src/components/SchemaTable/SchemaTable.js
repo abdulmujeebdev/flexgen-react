@@ -1,5 +1,5 @@
-import React from "react";
-import './SchemaTable.css';
+import React, { useEffect, useState } from "react";
+import "./SchemaTable.css";
 
 const SchemaTable = ({ className, config }) => {
   return (
@@ -12,18 +12,23 @@ const SchemaTable = ({ className, config }) => {
         </h3>
         {config.fields.length &&
           config.fields.map((field, i) => (
-            <div className="field-container" key={`${field.title}${i}`}>
+            <div className="field-container" key={`${field.name}${i}`}>
               <div>
                 <b
                   className={`field-option ${
-                    field.isNullable ? "active-color" : ""
+                    field.modifiers &&
+                    field.modifiers.findIndex(
+                      (obj) => obj.name === "nullable"
+                    ) !== -1
+                      ? "active-color"
+                      : ""
                   }`}
                 >
                   N
                 </b>
-                <span className="white-text">{field.title}</span>
+                <span className="white-text">{field.name}</span>
               </div>
-              <span className="white-text">{field.type}</span>
+              <span className="white-text">{field.dataType}</span>
             </div>
           ))}
       </div>
@@ -31,4 +36,4 @@ const SchemaTable = ({ className, config }) => {
   );
 };
 
-export default SchemaTable
+export default SchemaTable;
