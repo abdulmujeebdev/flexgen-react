@@ -13,7 +13,10 @@
   padding: 20px;
 }
 
-.modal-content h1, h5, h2, h3 {
+.modal-content h1,
+h5,
+h2,
+h3 {
   color: white;
 }
 
@@ -37,7 +40,8 @@
   color: #7b7b7b;
 }
 
-.setting-icon, .primary-color {
+.setting-icon,
+.primary-color {
   color: #38b2ac;
 }
 
@@ -64,4 +68,12 @@
 
 .soft-delete-checkbox {
   margin-left: 14px;
+}
+
+.cursor-pointer {
+  cursor: pointer;
+}
+
+.active-color {
+  color: #38b2ac;
 }

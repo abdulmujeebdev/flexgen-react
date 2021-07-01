@@ -6,20 +6,24 @@ import TabelModal from "../../components/TableModal/TableModal";
 import SchemaTable from "../../components/SchemaTable/SchemaTable";
 
 const SchemaEditor = () => {
-  const [show, setShow] = useState(false);
+  const [showTableModal, setShowTableModal] = useState(false);
+  const [tables, setTables] = useState(tablesData);
   const [tableRelations, setTableRelations] = useState([]);
 
   useEffect(() => {
+    console.log("tables", tables);
     const relations = tables
       .map((table, i) => {
         return table.relationships.map((relation) => {
           const foreignTableIndex = tables.findIndex(
-            (tableObj) => tableObj.id === relation.foreign_table_id
+            (tableObj) => tableObj.id === +relation.foreign_table_id
           );
           return { from: `.element${i}`, to: `.element${foreignTableIndex}` };
         });
       })
       .flat();
+
+    console.log("relations", relations);
 
     setTableRelations(relations || []);
     // Due to library issue we've to set minimum height to svg to draw line
@@ -34,11 +38,19 @@ const SchemaEditor = () => {
     }, 200);
   }, [tables]);
 
+  const addTable = (data) => {
+    setTables([...tables, data]);
+    setShowTableModal(false);
+  };
+
   return (
     <div className="main-container">
       <div className="navbar">
         <h2 className="navbar-heading">Schema Editor</h2>
-        <Button variant="outline-success" onClick={() => setShow(true)}>
+        <Button
+          variant="outline-success"
+          onClick={() => setShowTableModal(true)}
+        >
           <i className="fa fa-plus-circle" aria-hidden="true"></i>
           Add Entity
         </Button>
@@ -87,14 +99,18 @@ const SchemaEditor = () => {
         color="#ffffff"
         elements={tableRelations}
       />
-      <TabelModal show={show} setShow={setShow} />
+      <TabelModal
+        showTableModal={showTableModal}
+        setShowTableModal={setShowTableModal}
+        onSubmit={addTable}
+      />
     </div>
   );
 };
 
 export default SchemaEditor;
 
-const tables = [
+const tablesData = [
   {
     id: 3,
     schemaName: "ContactSchema",

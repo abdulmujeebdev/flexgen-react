@@ -1,6 +1,7 @@
 .table-container {
   border-radius: 10px;
   background-color: #495467;
+  height: fit-content;
 }
 .table-header {
   height: 10px;
