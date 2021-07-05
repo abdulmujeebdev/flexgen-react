@@ -76,7 +76,6 @@ const Admin = (props) => {
         }}
       />
       <div className="main-content" ref={mainContent}>
-        {/* Dont add navbar for schema editor */}
         {getBrandText(props.location.pathname) !== "Schema Editor" && (
           <AdminNavbar
             {...props}
