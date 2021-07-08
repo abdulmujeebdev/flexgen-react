@@ -1,5 +1,6 @@
 import React, { useState, useRef } from "react";
 import "./TableModal.css";
+import SettingForm from "../SettingForm/SettingForm.js";
 import { Modal, Form, Row, Col } from "react-bootstrap";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
@@ -8,7 +9,7 @@ import {
   faPlusCircle,
 } from "@fortawesome/free-solid-svg-icons";
 import { Button } from "react-bootstrap";
-
+//const form = require('./components/SettingForm/SettingForm.js')
 const TableModal = ({ showTableModal, setShowTableModal, onSubmit }) => {
   const tableId = useRef(Math.floor(Math.random() * 1000));
   const initialRelationData = {
@@ -19,7 +20,7 @@ const TableModal = ({ showTableModal, setShowTableModal, onSubmit }) => {
   const [tableName, setTableName] = useState("");
   const [columns, setColumns] = useState([{}]);
   const [relationships, setRelationships] = useState([initialRelationData]);
-
+ const [buttonSetting , setbuttonSetting] = useState(false);
   // Column functions
 
   const updateColumn = (value, index, field) => {
@@ -117,6 +118,7 @@ const TableModal = ({ showTableModal, setShowTableModal, onSubmit }) => {
   };
 
   return (
+   
     <Modal
       show={showTableModal}
       onHide={() => setShowTableModal(false)}
@@ -195,7 +197,13 @@ const TableModal = ({ showTableModal, setShowTableModal, onSubmit }) => {
                   >
                     N
                   </b>
-                  <FontAwesomeIcon icon={faCog} className="setting-icon" />
+                
+                  <FontAwesomeIcon 
+                  icon={faCog} 
+                  className="setting-icon cursor-pointer"
+                  onClick={() => setbuttonSetting(true)}
+                  />
+                   
                   <FontAwesomeIcon
                     icon={faTrashAlt}
                     className="delete-icon cursor-pointer"
@@ -204,7 +212,9 @@ const TableModal = ({ showTableModal, setShowTableModal, onSubmit }) => {
                 </Col>
               </Row>
               <br />
+             
             </>
+            
           ))
         )}
         <div
@@ -276,6 +286,8 @@ const TableModal = ({ showTableModal, setShowTableModal, onSubmit }) => {
         <Button variant="outline-success" onClick={() => submitTable()}>
           Save
         </Button>
+        <SettingForm  trigger={buttonSetting}>
+             </SettingForm>
       </Form>
     </Modal>
   );
