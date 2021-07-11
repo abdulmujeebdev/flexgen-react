@@ -8,17 +8,27 @@ import {
   faPlusCircle,
 } from "@fortawesome/free-solid-svg-icons";
 import { Button } from "react-bootstrap";
+import { DATA_TYPES } from "../../contants/ColumnTypes";
+import { RELATIONSHIPS } from "../../contants/Relationships";
 
-const TableModal = ({ showTableModal, setShowTableModal, onSubmit }) => {
-  const tableId = useRef(Math.floor(Math.random() * 1000));
+const TableModal = ({
+  setShowTableModal,
+  onSubmit,
+  tables,
+  selectedTable,
+}) => {
+  const tableId = useRef(selectedTable.id || Math.floor(Math.random() * 1000));
   const initialRelationData = {
     local_table_id: tableId.current,
     local_key: "id",
-    foreign_key: "name",
   };
-  const [tableName, setTableName] = useState("");
-  const [columns, setColumns] = useState([{}]);
-  const [relationships, setRelationships] = useState([initialRelationData]);
+  const [modalName, setModalName] = useState(selectedTable.schemaName || "");
+  const [columns, setColumns] = useState(
+    selectedTable.definition?.columns || [{}]
+  );
+  const [relationships, setRelationships] = useState(
+    selectedTable.relationships || [initialRelationData]
+  );
 
   // Column functions
 
@@ -66,6 +76,17 @@ const TableModal = ({ showTableModal, setShowTableModal, onSubmit }) => {
     setRelationships([...relationships]);
   };
 
+  const onRelationTableSelect = (tableName, i) => {
+    updateRelationship(tableName, i, "foreign_table");
+    if (!tableName) return;
+    const selectedTable = tables.find(
+      (table) => table.tableName === tableName
+    );
+    relationships[i].name = selectedTable.schemaName.toLowerCase();
+    relationships[i].foreign_key =
+      selectedTable.schemaName.toLowerCase() + "_id";
+  };
+
   const deleteRelation = (index) => {
     if (relationships.length < 1) {
       alert("can't delete all relationships");
@@ -82,8 +103,8 @@ const TableModal = ({ showTableModal, setShowTableModal, onSubmit }) => {
   };
 
   const submitTable = () => {
-    if (tableName.length === 0) {
-      alert("Table name is required");
+    if (modalName.length === 0) {
+      alert("Modal name is required");
       return;
     }
 
@@ -101,13 +122,14 @@ const TableModal = ({ showTableModal, setShowTableModal, onSubmit }) => {
       return;
     }
 
+    const allRelationships = relationships.filter(
+      (relationship) => !!relationship.foreign_table && !!relationship.key
+    );
     const data = {
       id: tableId.current,
-      schemaName: tableName[0].toUpperCase() + tableName.slice(1) + "Schema",
-      tableName: tableName.toLocaleLowerCase(),
-      relationships: relationships.filter(
-        (relationship) => !!relationship.foreign_table_id
-      ),
+      schemaName: modalName[0].toUpperCase() + modalName.slice(1),
+      tableName: modalName.toLocaleLowerCase() + 's',
+      relationships: allRelationships,
       definition: {
         columns,
       },
@@ -118,23 +140,23 @@ const TableModal = ({ showTableModal, setShowTableModal, onSubmit }) => {
 
   return (
     <Modal
-      show={showTableModal}
+      show={true}
       onHide={() => setShowTableModal(false)}
       dialogClassName="modal-90w modal-container"
     >
-      <h1>Enity Options</h1>
+      <h1>Entity Options</h1>
       <h5>Category, Collection: Categories, Table: catogries</h5>
-      <FontAwesomeIcon icon={faTrashAlt} className="delete-icon delete-table" />
+      <FontAwesomeIcon icon={faTrashAlt} className="delete-icon delete-table cursor-pointer" />
 
       <br />
       <Form>
         <Form.Group controlId="formBasicEmail">
           <Form.Label>Name</Form.Label>
           <Form.Control
-            type="email"
-            placeholder="Enter table name"
-            value={tableName}
-            onChange={(e) => setTableName(e.target.value)}
+            type="text"
+            placeholder="Enter Modal Name"
+            value={modalName}
+            onChange={(e) => setModalName(e.target.value)}
           />
         </Form.Group>
 
@@ -173,12 +195,11 @@ const TableModal = ({ showTableModal, setShowTableModal, onSubmit }) => {
                     }}
                   >
                     <option value="">Choose data type</option>
-                    <option>Big Increments</option>
-                    <option>String</option>
-                    <option>Integer</option>
-                    <option>Float</option>
-                    <option>Double</option>
-                    <option>Boolean</option>
+                    {React.Children.toArray(
+                      Object.entries(DATA_TYPES).map(([key, value]) => (
+                        <option value={key}>{value}</option>
+                      ))
+                    )}
                   </Form.Control>
                 </Col>
                 <Col className="field-options">
@@ -195,7 +216,7 @@ const TableModal = ({ showTableModal, setShowTableModal, onSubmit }) => {
                   >
                     N
                   </b>
-                  <FontAwesomeIcon icon={faCog} className="setting-icon" />
+                  <FontAwesomeIcon icon={faCog} className="setting-icon cursor-pointer" />
                   <FontAwesomeIcon
                     icon={faTrashAlt}
                     className="delete-icon cursor-pointer"
@@ -215,27 +236,32 @@ const TableModal = ({ showTableModal, setShowTableModal, onSubmit }) => {
           <span>Add Field</span>
         </div>
 
+        <hr className="line-breaker" />
+
         <h2 className="section-title">Relationships</h2>
 
         {React.Children.toArray(
           relationships.map((relationship, i) => (
             <>
               <Row className="field-input-row">
-                <Col>
+                <Col xs={5}>
                   <Form.Control
                     as="select"
-                    value={relationship.foreign_table_id || ""}
-                    onChange={(e) =>
-                      updateRelationship(e.target.value, i, "foreign_table_id")
-                    }
+                    value={relationship.foreign_table || ""}
+                    onChange={(e) => onRelationTableSelect(e.target.value, i)}
                   >
                     <option value="">Choose table</option>
-                    <option value="3">Contact</option>
-                    <option value="6">Teacher</option>
-                    <option value="11">Student</option>
+                    {React.Children.toArray(
+                      tables.length > 0 &&
+                        tables.map((table) => (
+                          <option value={table.tableName}>
+                            {table.schemaName}
+                          </option>
+                        ))
+                    )}
                   </Form.Control>
                 </Col>
-                <Col>
+                <Col xs={5}>
                   <Form.Control
                     as="select"
                     value={relationship.key || ""}
@@ -244,9 +270,11 @@ const TableModal = ({ showTableModal, setShowTableModal, onSubmit }) => {
                     }
                   >
                     <option value="">Choose relation</option>
-                    <option value="belongsTo">belongsTo</option>
-                    <option value="oneToMany">oneToMany</option>
-                    <option value="manyToMany">manyToMany</option>
+                    {React.Children.toArray(
+                      Object.entries(RELATIONSHIPS).map(([key, value]) => (
+                        <option value={key}>{value}</option>
+                      ))
+                    )}
                   </Form.Control>
                 </Col>
                 <Col className="field-options">
@@ -257,13 +285,38 @@ const TableModal = ({ showTableModal, setShowTableModal, onSubmit }) => {
                   />
                 </Col>
               </Row>
+              {relationship.foreign_table && relationship.key && (
+                <Row className="field-input-row">
+                  <Col xs={5}>
+                    <span>Relationship Name</span>
+                    <Form.Control
+                      type="text"
+                      placeholder="Enter relationship name"
+                      value={relationship.name}
+                      onChange={(e) =>
+                        updateRelationship(e.target.value, i, "name")
+                      }
+                    />
+                  </Col>
+                  <Col xs={5}>
+                    <span>Foreign Key Name</span>
+                    <Form.Control
+                      type="text"
+                      placeholder="Enter foreign key name"
+                      value={relationship.foreign_key}
+                      onChange={(e) =>
+                        updateRelationship(e.target.value, i, "foreign_key")
+                      }
+                    />
+                  </Col>
+                  <Col />
+                </Row>
+              )}
               <br />
             </>
           ))
         )}
         {/* <h3>products()</h3> */}
-
-        <hr className="line-breaker" />
 
         <div
           className="primary-color add-title cursor-pointer"
@@ -282,3 +335,58 @@ const TableModal = ({ showTableModal, setShowTableModal, onSubmit }) => {
 };
 
 export default TableModal;
+
+// {
+//   schemaName:"User",
+//   relationships:[
+//     {
+//       key:'oneToOne',
+//       local_key:id,
+//       foreign_key:user_id,
+//       foreign_table:'Post'
+//     }
+//   ],
+//   definition: {
+//         columns: [
+//           {
+//             name: "id",
+//             dataType: "bigincrements",
+//           },
+//           {
+//             name: "name",
+//             dataType: "string",
+
+//           },
+//         ]
+//       }
+// },
+
+// {
+//   schemaName:"Post",
+//   relationships:[
+//     {
+//       key:'belongsTo',
+//       local_key:user_id, // id
+//       foreign_key:id, // user_id
+//       foreign_table:'User',
+//     }
+//   ],
+//   definition: {
+//         columns: [
+//           {
+//             name: "id",
+//             dataType: "bigincrements",
+
+//           },
+//           {
+//             name: "title",
+//             dataType: "string",
+
+//           },
+//           {
+//             name: "user_id",
+//             dataType: "biginteger",
+//           },
+//         ]
+// },
+// },

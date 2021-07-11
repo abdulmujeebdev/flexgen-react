@@ -2,6 +2,7 @@
   border-radius: 10px;
   background-color: #495467;
   height: fit-content;
+  font-size: 0.9rem;
 }
 .table-header {
   height: 10px;
@@ -21,12 +22,14 @@
 }
 .table-body {
   padding: 12px 10px;
+  /* min height because react connect element library arrows issue */
+  min-height: 350px;
 }
 
 .field-container {
   display: flex;
   justify-content: space-between;
-  margin-bottom: 6px;
+  margin-bottom: 2px;
 }
 
 .field-option {

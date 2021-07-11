@@ -9,19 +9,30 @@ const SchemaEditor = () => {
   const [showTableModal, setShowTableModal] = useState(false);
   const [tables, setTables] = useState(tablesData);
   const [tableRelations, setTableRelations] = useState([]);
+  const [selectedTable, setSelectedTable] = useState({});
 
   useEffect(() => {
-    console.log("tables", tables);
-    const relations = tables
+    const allRelationships = tables
       .map((table, i) => {
         return table.relationships.map((relation) => {
           const foreignTableIndex = tables.findIndex(
-            (tableObj) => tableObj.id === +relation.foreign_table_id
+            (tableObj) => tableObj.tableName === relation.foreign_table
           );
           return { from: `.element${i}`, to: `.element${foreignTableIndex}` };
         });
       })
       .flat();
+
+    const relations = [];
+    allRelationships.forEach((relationship) => {
+      const index = relations.findIndex(
+        (relation) =>
+          relation.from === relationship.to && relationship.from === relation.to
+      );
+      if (index === -1) {
+        relations.push(relationship);
+      }
+    });
 
     console.log("relations", relations);
 
@@ -31,6 +42,7 @@ const SchemaEditor = () => {
       const connectContainer = document.getElementById(
         "react-connect-elements-container"
       );
+      if (!connectContainer) return;
       connectContainer.childNodes[0].setAttribute(
         "style",
         "min-height: 400px !important"
@@ -38,10 +50,36 @@ const SchemaEditor = () => {
     }, 200);
   }, [tables]);
 
-  const addTable = (data) => {
-    setTables([...tables, data]);
+  const addOrUpdateTable = (data) => {
+    if (selectedTable.id) {
+      const updatedTables = tables.map(table => table.id === selectedTable.id ? data : table);
+      console.log({updatedTables});
+      setTables(updatedTables);
+    } else {
+      // data.relationships.forEach(relation => {
+      //   // if(relation.key !== 'belongsTo') {
+      //     const { foreign_key, local_key, local_table_id, foreign_table } = relation;
+      //     const foreignTableIndex = tables.findIndex(
+      //       (tableObj) => tableObj.tableName === relation.foreign_table
+      //     );
+      //     tables[foreignTableIndex].relationships.push({
+      //       foreign_key,
+      //       foreign_table,
+      //       key: "belongsTo",
+      //       local_key,
+      //       local_table_id,
+      //       name: tables[foreignTableIndex].tableName.slice(0, tables[foreignTableIndex].tableName.length - 1)
+      //     });
+      //   // }
+      // })
+      // need to move code
+      setTables([...tables, data]);
+      
+    }
     setShowTableModal(false);
   };
+
+  console.log("selectedTable", selectedTable);
 
   return (
     <div className="main-container">
@@ -49,7 +87,10 @@ const SchemaEditor = () => {
         <h2 className="navbar-heading">Schema Editor</h2>
         <Button
           variant="outline-success"
-          onClick={() => setShowTableModal(true)}
+          onClick={() => {
+            setShowTableModal(true);
+            setSelectedTable({});
+          }}
         >
           <i className="fa fa-plus-circle" aria-hidden="true"></i>
           Add Entity
@@ -61,36 +102,15 @@ const SchemaEditor = () => {
             React.Children.toArray(
               tables.map((table, i) => (
                 <SchemaTable
-                  className={`element element${i}`}
-                  config={{
-                    title: table.tableName,
-                    fields: table.definition.columns,
+                  index={`${i}`}
+                  table={table}
+                  setSelectedTable={(table) => {
+                    setSelectedTable(table);
+                    setShowTableModal(true);
                   }}
                 />
               ))
             )}
-          {/* <SchemaTable
-            className="element element1"
-            config={{
-              title: "user",
-              fields: userFields,
-            }}
-          />
-          <SchemaTable
-            className="element element3"
-            config={{
-              title: "category",
-              fields: userFields,
-            }}
-          />
-          <div></div>
-          <SchemaTable
-            className="element element2"
-            config={{
-              title: "product",
-              fields: userFields,
-            }}
-          /> */}
         </div>
       </div>
       <ConnectElements
@@ -99,11 +119,14 @@ const SchemaEditor = () => {
         color="#ffffff"
         elements={tableRelations}
       />
-      <TabelModal
-        showTableModal={showTableModal}
-        setShowTableModal={setShowTableModal}
-        onSubmit={addTable}
-      />
+      {showTableModal && (
+        <TabelModal
+          tables={tables}
+          selectedTable={selectedTable}
+          setShowTableModal={setShowTableModal}
+          onSubmit={addOrUpdateTable}
+        />
+      )}
     </div>
   );
 };
@@ -113,15 +136,26 @@ export default SchemaEditor;
 const tablesData = [
   {
     id: 3,
-    schemaName: "ContactSchema",
-    tableName: "contact",
+    schemaName: "Contact",
+    tableName: "contacts",
     relationships: [
       {
-        key: "oneToMany",
+        name: 'teacher',
+        key: "hasOne",
         local_table_id: 3,
         local_key: "id",
         foreign_table_id: 6,
-        foreign_key: "name",
+        foreign_table: "teachers",
+        foreign_key: "teacher_id",
+      },
+      {
+        name: 'student',
+        key: "hasOne",
+        local_table_id: 3,
+        local_key: "id",
+        foreign_table_id: 11,
+        foreign_table: "students",
+        foreign_key: "student_id",
       },
     ],
     definition: {
@@ -184,15 +218,6 @@ const tablesData = [
           name: "notes",
           dataType: "text",
           textType: "LongText",
-        },
-        {
-          name: "client_id",
-          dataType: "integer",
-          modifiers: [
-            {
-              name: "unique",
-            },
-          ],
         },
         {
           name: "created_at",
@@ -207,15 +232,17 @@ const tablesData = [
   },
   {
     id: 6,
-    schemaName: "TeacherSchema",
-    tableName: "teacher",
+    schemaName: "Teacher",
+    tableName: "teachers",
     relationships: [
       {
+        name: 'contact',
         key: "belongsTo",
         local_table_id: 6,
         local_key: "id",
         foreign_table_id: 3,
-        foreign_key: "name",
+        foreign_table: "contacts",
+        foreign_key: "contact_id",
       },
     ],
     definition: {
@@ -278,15 +305,6 @@ const tablesData = [
           name: "notes",
           dataType: "text",
           textType: "LongText",
-        },
-        {
-          name: "client_id",
-          dataType: "integer",
-          modifiers: [
-            {
-              name: "unique",
-            },
-          ],
         },
         {
           name: "created_at",
@@ -301,15 +319,17 @@ const tablesData = [
   },
   {
     id: 11,
-    schemaName: "StudentSchema",
-    tableName: "student",
+    schemaName: "Student",
+    tableName: "students",
     relationships: [
       {
+        name: 'contact',
         key: "belongsTo",
         local_table_id: 11,
         local_key: "id",
         foreign_table_id: 3,
-        foreign_key: "name",
+        foreign_table: "contacts",
+        foreign_key: "contact_id",
       },
     ],
     definition: {
@@ -374,15 +394,6 @@ const tablesData = [
           textType: "LongText",
         },
         {
-          name: "client_id",
-          dataType: "integer",
-          modifiers: [
-            {
-              name: "unique",
-            },
-          ],
-        },
-        {
           name: "created_at",
           dataType: "timestamp",
         },
@@ -392,48 +403,5 @@ const tablesData = [
         },
       ],
     },
-  },
-];
-
-const userFields = [
-  {
-    isNullable: false,
-    title: "id",
-    type: "bigIncrements",
-  },
-  {
-    isNullable: false,
-    title: "name",
-    type: "string",
-  },
-  {
-    isNullable: false,
-    title: "email",
-    type: "string",
-  },
-  {
-    isNullable: true,
-    title: "email_verified_at",
-    type: "timestamp",
-  },
-  {
-    isNullable: false,
-    title: "password",
-    type: "string",
-  },
-  {
-    isNullable: true,
-    title: "remember_token",
-    type: "string",
-  },
-  {
-    isNullable: true,
-    title: "created_at",
-    type: "timestamp",
-  },
-  {
-    isNullable: true,
-    title: "updated_at",
-    type: "timestamp",
   },
 ];

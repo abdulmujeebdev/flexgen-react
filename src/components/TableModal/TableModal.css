@@ -11,6 +11,8 @@
 .modal-content {
   background-color: transparent;
   padding: 20px;
+  height: 100%;
+  overflow: scroll;
 }
 
 .modal-content h1,
