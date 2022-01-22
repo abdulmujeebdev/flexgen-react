@@ -76,10 +76,12 @@ const Admin = (props) => {
         }}
       />
       <div className="main-content" ref={mainContent}>
-        <AdminNavbar
-          {...props}
-          brandText={getBrandText(props.location.pathname)}
-        />
+        {getBrandText(props.location.pathname) !== "Schema Editor" && (
+          <AdminNavbar
+            {...props}
+            brandText={getBrandText(props.location.pathname)}
+          />
+        )}
         <Switch>
           {getRoutes(routes)}
           <Redirect from="*" to="/admin/index" />
