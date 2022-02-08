@@ -4,11 +4,12 @@ import { Modal, Form, Row, Col } from "react-bootstrap";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
   faTrashAlt,
-  faCog,
+  // faCog,
   faPlusCircle,
 } from "@fortawesome/free-solid-svg-icons";
 import { Button } from "react-bootstrap";
 import { DATA_TYPES } from "../../contants/ColumnTypes";
+import { MODIFIER } from "../../contants/ColumnModifiers";
 import { RelationshipTablesDropdown } from "./RelationshipTablesDropdown";
 import { RelationshipDropdown } from "./RelationshipDropdown";
 import { INVERSE_RELATION } from "../../contants/Relationships";
@@ -51,18 +52,29 @@ const TableModal = ({ closeModal, onSubmit, tables, selectedTable }) => {
     setColumns(updatedColumns);
   };
 
-  const addNullModifierToColumn = (index) => {
+  const addOrRemoveColumnModifier = (index, modifierValue) => {
     if (!columns[index].modifiers) {
       columns[index].modifiers = [];
     }
-    const nullableObjIndex = columns[index].modifiers.findIndex(
-      (modifier) => modifier.name === "nullable"
+    const modifierIndex = columns[index].modifiers.findIndex(
+      (modifierDetail) => modifierDetail.name === modifierValue
     );
-    if (nullableObjIndex !== -1) {
-      columns[index].modifiers.splice(nullableObjIndex, 1);
+    if (modifierIndex !== -1) {
+      columns[index].modifiers.splice(modifierIndex, 1);
     } else {
+      if (modifierValue === MODIFIER.PRIMARY) {
+        for (const column of columns) {
+          if (!column.modifiers || column.modifiers.length === 0) continue;
+          for (const modifier of column.modifiers) {
+            if (modifier.name === MODIFIER.PRIMARY) {
+              alert("Primary key is already selected");
+              return;
+            }
+          }
+        }
+      }
       columns[index].modifiers.push({
-        name: "nullable",
+        name: modifierValue,
       });
     }
     setColumns([...columns]);
@@ -198,19 +210,51 @@ const TableModal = ({ closeModal, onSubmit, tables, selectedTable }) => {
                     className={`null-option cursor-pointer ${
                       column.modifiers &&
                       column.modifiers.findIndex(
-                        (obj) => obj.name === "nullable"
+                        (obj) => obj.name === MODIFIER.NULLABLE
                       ) !== -1
                         ? "active-color"
                         : ""
                     }`}
-                    onClick={() => addNullModifierToColumn(i)}
+                    onClick={() =>
+                      addOrRemoveColumnModifier(i, MODIFIER.NULLABLE)
+                    }
                   >
                     N
                   </b>
-                  <FontAwesomeIcon
+                  <b
+                    className={`null-option cursor-pointer ${
+                      column.modifiers &&
+                      column.modifiers.findIndex(
+                        (obj) => obj.name === MODIFIER.PRIMARY
+                      ) !== -1
+                        ? "active-color"
+                        : ""
+                    }`}
+                    onClick={() =>
+                      addOrRemoveColumnModifier(i, MODIFIER.PRIMARY)
+                    }
+                  >
+                    P
+                  </b>
+                  <b
+                    className={`null-option cursor-pointer ${
+                      column.modifiers &&
+                      column.modifiers.findIndex(
+                        (obj) => obj.name === MODIFIER.UNIQUE
+                      ) !== -1
+                        ? "active-color"
+                        : ""
+                    }`}
+                    onClick={() =>
+                      addOrRemoveColumnModifier(i, MODIFIER.UNIQUE)
+                    }
+                  >
+                    U
+                  </b>
+                  {/* <FontAwesomeIcon
                     icon={faCog}
                     className="setting-icon cursor-pointer"
-                  />
+                  /> */}
                   <FontAwesomeIcon
                     icon={faTrashAlt}
                     className="delete-icon cursor-pointer"
