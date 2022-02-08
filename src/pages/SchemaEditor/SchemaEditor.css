@@ -55,7 +55,8 @@ footer {
   letter-spacing: 2px;
 }
 
-.fa-plus-circle {
+.fa-plus-circle,
+.fa-download {
   margin-right: 08px;
 }
 

@@ -4,10 +4,15 @@ import { Button } from "react-bootstrap";
 import ConnectElements from "react-connect-elements";
 import TabelModal from "../../components/TableModal/TableModal";
 import SchemaTable from "../../components/SchemaTable/SchemaTable";
+import { integrateTablesRelations } from "../../services/SchemaEditorUtilService";
+import { INVERSE_RELATION } from "../../contants/Relationships";
 
 const SchemaEditor = () => {
   const [showTableModal, setShowTableModal] = useState(false);
-  const [tables, setTables] = useState(tablesData);
+  // We have to re-render connect elements library when a relation update, it's a library bug
+  const [showConnectElementsLines, setShowConnectElementsLines] =
+    useState(true);
+  const [tables, setTables] = useState(dummyTables);
   const [tableRelations, setTableRelations] = useState([]);
   const [selectedTable, setSelectedTable] = useState({});
 
@@ -15,8 +20,10 @@ const SchemaEditor = () => {
     const allRelationships = tables
       .map((table, i) => {
         return table.relationships.map((relation) => {
+          if (Object.values(INVERSE_RELATION).includes(relation.key))
+            return null;
           const foreignTableIndex = tables.findIndex(
-            (tableObj) => tableObj.tableName === relation.foreign_table
+            (tableObj) => +tableObj.id === +relation.foreign_table_id
           );
           return { from: `.element${i}`, to: `.element${foreignTableIndex}` };
         });
@@ -25,20 +32,26 @@ const SchemaEditor = () => {
 
     const relations = [];
     allRelationships.forEach((relationship) => {
-      const index = relations.findIndex(
-        (relation) =>
-          relation.from === relationship.to && relationship.from === relation.to
-      );
-      if (index === -1) {
-        relations.push(relationship);
+      if (relationship) {
+        const index = relations.findIndex(
+          (relation) =>
+            relation.from === relationship.to &&
+            relationship.from === relation.to
+        );
+        if (index === -1) {
+          relations.push(relationship);
+        }
       }
     });
 
     console.log("relations", relations);
 
     setTableRelations(relations || []);
+    setShowConnectElementsLines(false);
+
     // Due to library issue we've to set minimum height to svg to draw line
     setTimeout(() => {
+      setShowConnectElementsLines(true);
       const connectContainer = document.getElementById(
         "react-connect-elements-container"
       );
@@ -52,49 +65,69 @@ const SchemaEditor = () => {
 
   const addOrUpdateTable = (data) => {
     if (selectedTable.id) {
-      const updatedTables = tables.map(table => table.id === selectedTable.id ? data : table);
-      console.log({updatedTables});
+      integrateTablesRelations({ tables, selectedTable: data, editMode: true });
+      const updatedTables = tables.map((table) =>
+        table.id === selectedTable.id ? data : table
+      );
       setTables(updatedTables);
     } else {
-      // data.relationships.forEach(relation => {
-      //   // if(relation.key !== 'belongsTo') {
-      //     const { foreign_key, local_key, local_table_id, foreign_table } = relation;
-      //     const foreignTableIndex = tables.findIndex(
-      //       (tableObj) => tableObj.tableName === relation.foreign_table
-      //     );
-      //     tables[foreignTableIndex].relationships.push({
-      //       foreign_key,
-      //       foreign_table,
-      //       key: "belongsTo",
-      //       local_key,
-      //       local_table_id,
-      //       name: tables[foreignTableIndex].tableName.slice(0, tables[foreignTableIndex].tableName.length - 1)
-      //     });
-      //   // }
-      // })
+      integrateTablesRelations({
+        tables,
+        selectedTable: data,
+        editMode: false,
+      });
+
       // need to move code
       setTables([...tables, data]);
-      
     }
     setShowTableModal(false);
+    setSelectedTable({});
+  };
+
+  const publishSchema = () => {
+    //   fetch('http://127.0.0.1:3333/create-migration', {
+    //     method: 'POST',
+    //     headers: {
+    //       'Content-Type': 'application/json',
+    //     },
+    //     body: JSON.stringify({
+    //       tables: tables,
+    //     }),
+    //   })
+    //     .then((res) => res.json())
+    //     .then((response) => {
+    //       console.log('respnose', response)
+    //     })
+    //     .catch((err) => console.log('err', err))
   };
 
   console.log("selectedTable", selectedTable);
+  console.log("tables", tables);
 
   return (
     <div className="main-container">
       <div className="navbar">
         <h2 className="navbar-heading">Schema Editor</h2>
-        <Button
-          variant="outline-success"
-          onClick={() => {
-            setShowTableModal(true);
-            setSelectedTable({});
-          }}
-        >
-          <i className="fa fa-plus-circle" aria-hidden="true"></i>
-          Add Entity
-        </Button>
+        <div>
+          <Button
+            variant="outline-info"
+            className="main-btn"
+            onClick={() => {
+              setShowTableModal(true);
+            }}
+          >
+            <i className="fa fa-plus-circle" aria-hidden="true"></i>
+            Add Entity
+          </Button>
+          <Button
+            variant="outline-success"
+            className="main-btn"
+            onClick={publishSchema}
+          >
+            <i className="fas fa-download"></i>
+            Download JSON
+          </Button>
+        </div>
       </div>
       <div className="elements">
         <div className="elements-row">
@@ -113,17 +146,22 @@ const SchemaEditor = () => {
             )}
         </div>
       </div>
-      <ConnectElements
-        selector=".elements"
-        overlay={10}
-        color="#ffffff"
-        elements={tableRelations}
-      />
+      {showConnectElementsLines && (
+        <ConnectElements
+          selector=".elements"
+          overlay={10}
+          color="#ffffff"
+          elements={tableRelations}
+        />
+      )}
       {showTableModal && (
         <TabelModal
-          tables={tables}
+          tables={tables.filter((table) => table.id !== selectedTable.id)}
           selectedTable={selectedTable}
-          setShowTableModal={setShowTableModal}
+          closeModal={() => {
+            setShowTableModal(false);
+            setSelectedTable({});
+          }}
           onSubmit={addOrUpdateTable}
         />
       )}
@@ -133,6 +171,84 @@ const SchemaEditor = () => {
 
 export default SchemaEditor;
 
+const dummyTables = [
+  {
+    id: 658,
+    schemaName: "Srudent",
+    tableName: "srudent",
+    relationships: [
+      {
+        foreign_table: "course",
+        foreign_table_id: 241,
+        key: "belongsTo",
+        local_key: "id",
+        local_table_id: 658,
+        name: "srudent",
+      },
+      {
+        foreign_table: "department",
+        foreign_table_id: 792,
+        key: "belongsTo",
+        local_key: "id",
+        local_table_id: 658,
+        name: "srudent",
+      },
+    ],
+    definition: {
+      columns: [
+        {
+          name: "id",
+          dataType: "boolean",
+        },
+      ],
+    },
+  },
+  {
+    id: 241,
+    schemaName: "PreCourse",
+    tableName: "precourse",
+    relationships: [
+      {
+        name: "srudent",
+        foreign_key: "srudent_id",
+        foreign_table_id: 658,
+        foreign_table: "srudent",
+        key: "manyToMany",
+      },
+    ],
+    definition: {
+      columns: [
+        {
+          name: "id",
+          dataType: "boolean",
+        },
+      ],
+    },
+  },
+  {
+    id: 792,
+    schemaName: "Department",
+    tableName: "department",
+    relationships: [
+      {
+        name: "srudent",
+        foreign_key: "srudent_id",
+        foreign_table_id: 658,
+        foreign_table: "srudent",
+        key: "oneToMany",
+      },
+    ],
+    definition: {
+      columns: [
+        {
+          name: "id",
+          dataType: "integer",
+        },
+      ],
+    },
+  },
+];
+
 const tablesData = [
   {
     id: 3,
@@ -140,17 +256,17 @@ const tablesData = [
     tableName: "contacts",
     relationships: [
       {
-        name: 'teacher',
-        key: "hasOne",
+        name: "post",
+        key: "oneToOne",
         local_table_id: 3,
         local_key: "id",
         foreign_table_id: 6,
-        foreign_table: "teachers",
-        foreign_key: "teacher_id",
+        foreign_table: "posts",
+        foreign_key: "post_id",
       },
       {
-        name: 'student',
-        key: "hasOne",
+        name: "student",
+        key: "oneToOne",
         local_table_id: 3,
         local_key: "id",
         foreign_table_id: 11,
@@ -232,11 +348,11 @@ const tablesData = [
   },
   {
     id: 6,
-    schemaName: "Teacher",
-    tableName: "teachers",
+    schemaName: "Post",
+    tableName: "posts",
     relationships: [
       {
-        name: 'contact',
+        name: "contact",
         key: "belongsTo",
         local_table_id: 6,
         local_key: "id",
@@ -323,7 +439,7 @@ const tablesData = [
     tableName: "students",
     relationships: [
       {
-        name: 'contact',
+        name: "contact",
         key: "belongsTo",
         local_table_id: 11,
         local_key: "id",

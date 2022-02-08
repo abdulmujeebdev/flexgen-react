@@ -1,7 +1,8 @@
 # FlexGen-React
 
 ## Getting Started
-1. `git clone https://github.com/appflexion/flexgen-react.git`
+
+1. `git clone https://github.com/abdulmujeebdev/flexgen-react.git`
 
 2. `cd flexgen-react`
 
@@ -11,8 +12,8 @@
 
 That's it, HAPPY CODING! :tada:
 
-
 ## File Structure
+
 Within the download you'll find the following directories and files:
 
 ```
@@ -124,4 +125,3 @@ Argon Dashboard React
             ├── Register.jsx
             └── Tables.jsx
 ```
-

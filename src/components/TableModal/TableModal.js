@@ -9,14 +9,11 @@ import {
 } from "@fortawesome/free-solid-svg-icons";
 import { Button } from "react-bootstrap";
 import { DATA_TYPES } from "../../contants/ColumnTypes";
-import { RELATIONSHIPS } from "../../contants/Relationships";
+import { RelationshipTablesDropdown } from "./RelationshipTablesDropdown";
+import { RelationshipDropdown } from "./RelationshipDropdown";
+import { INVERSE_RELATION } from "../../contants/Relationships";
 
-const TableModal = ({
-  setShowTableModal,
-  onSubmit,
-  tables,
-  selectedTable,
-}) => {
+const TableModal = ({ closeModal, onSubmit, tables, selectedTable }) => {
   const tableId = useRef(selectedTable.id || Math.floor(Math.random() * 1000));
   const initialRelationData = {
     local_table_id: tableId.current,
@@ -24,17 +21,20 @@ const TableModal = ({
   };
   const [modalName, setModalName] = useState(selectedTable.schemaName || "");
   const [columns, setColumns] = useState(
-    selectedTable.definition?.columns || [{}]
+    selectedTable.definition?.columns
+      ? [...selectedTable.definition?.columns]
+      : [{}]
   );
   const [relationships, setRelationships] = useState(
-    selectedTable.relationships || [initialRelationData]
+    selectedTable.relationships
+      ? [...selectedTable.relationships]
+      : [initialRelationData]
   );
 
   // Column functions
 
   const updateColumn = (value, index, field) => {
     columns[index][field] = value;
-    console.log({ value, index, field, columns });
     setColumns([...columns]);
   };
 
@@ -76,15 +76,16 @@ const TableModal = ({
     setRelationships([...relationships]);
   };
 
-  const onRelationTableSelect = (tableName, i) => {
-    updateRelationship(tableName, i, "foreign_table");
-    if (!tableName) return;
-    const selectedTable = tables.find(
-      (table) => table.tableName === tableName
-    );
-    relationships[i].name = selectedTable.schemaName.toLowerCase();
-    relationships[i].foreign_key =
-      selectedTable.schemaName.toLowerCase() + "_id";
+  const onRelationTableSelect = (tableId, i) => {
+    const tableSelected = tables.find((table) => +table.id === +tableId);
+    if (!tableSelected) return;
+    relationships[i] = {
+      name: tableSelected.schemaName.toLowerCase(),
+      foreign_key: tableSelected.schemaName.toLowerCase() + "_id",
+      foreign_table_id: tableSelected.id,
+      foreign_table: tableSelected.tableName,
+    };
+    setRelationships([...relationships]);
   };
 
   const deleteRelation = (index) => {
@@ -128,25 +129,27 @@ const TableModal = ({
     const data = {
       id: tableId.current,
       schemaName: modalName[0].toUpperCase() + modalName.slice(1),
-      tableName: modalName.toLocaleLowerCase() + 's',
+      tableName: modalName.toLowerCase(), // + "s"
       relationships: allRelationships,
       definition: {
         columns,
       },
     };
-    console.log(data);
     onSubmit(data);
   };
 
   return (
     <Modal
       show={true}
-      onHide={() => setShowTableModal(false)}
+      onHide={closeModal}
       dialogClassName="modal-90w modal-container"
     >
       <h1>Entity Options</h1>
       <h5>Category, Collection: Categories, Table: catogries</h5>
-      <FontAwesomeIcon icon={faTrashAlt} className="delete-icon delete-table cursor-pointer" />
+      <FontAwesomeIcon
+        icon={faTrashAlt}
+        className="delete-icon delete-table cursor-pointer"
+      />
 
       <br />
       <Form>
@@ -159,18 +162,6 @@ const TableModal = ({
             onChange={(e) => setModalName(e.target.value)}
           />
         </Form.Group>
-
-        <div className="content-row">
-          <Form.Group controlId="formTimeStampsCheckbox">
-            <Form.Check type="checkbox" label="Has Timestamps" />
-          </Form.Group>
-          <Form.Group
-            controlId="formSoftDeletesCheckbox"
-            className="soft-delete-checkbox"
-          >
-            <Form.Check type="checkbox" label="Uses Soft-Deletes" />
-          </Form.Group>
-        </div>
 
         <h2 className="section-title">Fields</h2>
         {React.Children.toArray(
@@ -216,7 +207,10 @@ const TableModal = ({
                   >
                     N
                   </b>
-                  <FontAwesomeIcon icon={faCog} className="setting-icon cursor-pointer" />
+                  <FontAwesomeIcon
+                    icon={faCog}
+                    className="setting-icon cursor-pointer"
+                  />
                   <FontAwesomeIcon
                     icon={faTrashAlt}
                     className="delete-icon cursor-pointer"
@@ -241,82 +235,73 @@ const TableModal = ({
         <h2 className="section-title">Relationships</h2>
 
         {React.Children.toArray(
-          relationships.map((relationship, i) => (
-            <>
-              <Row className="field-input-row">
-                <Col xs={5}>
-                  <Form.Control
-                    as="select"
-                    value={relationship.foreign_table || ""}
-                    onChange={(e) => onRelationTableSelect(e.target.value, i)}
-                  >
-                    <option value="">Choose table</option>
-                    {React.Children.toArray(
-                      tables.length > 0 &&
-                        tables.map((table) => (
-                          <option value={table.tableName}>
-                            {table.schemaName}
-                          </option>
-                        ))
-                    )}
-                  </Form.Control>
-                </Col>
-                <Col xs={5}>
-                  <Form.Control
-                    as="select"
-                    value={relationship.key || ""}
-                    onChange={(e) =>
-                      updateRelationship(e.target.value, i, "key")
-                    }
-                  >
-                    <option value="">Choose relation</option>
-                    {React.Children.toArray(
-                      Object.entries(RELATIONSHIPS).map(([key, value]) => (
-                        <option value={key}>{value}</option>
-                      ))
-                    )}
-                  </Form.Control>
-                </Col>
-                <Col className="field-options">
-                  <FontAwesomeIcon
-                    icon={faTrashAlt}
-                    className="delete-icon cursor-pointer"
-                    onClick={() => deleteRelation(i)}
-                  />
-                </Col>
-              </Row>
-              {relationship.foreign_table && relationship.key && (
+          relationships.map((relationship, i) => {
+            const isBelongsToRelation = Object.values(
+              INVERSE_RELATION
+            ).includes(relationship.key);
+            return (
+              <>
                 <Row className="field-input-row">
                   <Col xs={5}>
-                    <span>Relationship Name</span>
-                    <Form.Control
-                      type="text"
-                      placeholder="Enter relationship name"
-                      value={relationship.name}
-                      onChange={(e) =>
-                        updateRelationship(e.target.value, i, "name")
-                      }
+                    <RelationshipTablesDropdown
+                      tables={tables}
+                      readOnly={isBelongsToRelation}
+                      relationship={relationship}
+                      relationships={relationships}
+                      onSelect={(val) => onRelationTableSelect(val, i)}
                     />
                   </Col>
                   <Col xs={5}>
-                    <span>Foreign Key Name</span>
-                    <Form.Control
-                      type="text"
-                      placeholder="Enter foreign key name"
-                      value={relationship.foreign_key}
-                      onChange={(e) =>
-                        updateRelationship(e.target.value, i, "foreign_key")
-                      }
+                    <RelationshipDropdown
+                      relationship={relationship}
+                      readOnly={isBelongsToRelation}
+                      onSelect={(val) => updateRelationship(val, i, "key")}
                     />
                   </Col>
-                  <Col />
+                  {!isBelongsToRelation && (
+                    <Col className="field-options">
+                      <FontAwesomeIcon
+                        icon={faTrashAlt}
+                        className="delete-icon cursor-pointer"
+                        onClick={() => deleteRelation(i)}
+                      />
+                    </Col>
+                  )}
                 </Row>
-              )}
-              <br />
-            </>
-          ))
+                {relationship.foreign_table && relationship.key && (
+                  <Row className="field-input-row">
+                    <Col xs={5}>
+                      <span>Relationship Name</span>
+                      <Form.Control
+                        type="text"
+                        placeholder="Enter relationship name"
+                        value={relationship.name}
+                        readOnly={isBelongsToRelation}
+                        onChange={(e) =>
+                          updateRelationship(e.target.value, i, "name")
+                        }
+                      />
+                    </Col>
+                    <Col xs={5}>
+                      <span>Foreign Key Name</span>
+                      <Form.Control
+                        type="text"
+                        placeholder="Enter foreign key name"
+                        readOnly={isBelongsToRelation}
+                        value={relationship.foreign_key}
+                        onChange={(e) =>
+                          updateRelationship(e.target.value, i, "foreign_key")
+                        }
+                      />
+                    </Col>
+                    <Col />
+                  </Row>
+                )}
+                <br />
+              </>
+            );
+          })
         )}
-        {/* <h3>products()</h3> */}
 
         <div
           className="primary-color add-title cursor-pointer"
@@ -335,58 +320,3 @@ const TableModal = ({
 };
 
 export default TableModal;
-
-// {
-//   schemaName:"User",
-//   relationships:[
-//     {
-//       key:'oneToOne',
-//       local_key:id,
-//       foreign_key:user_id,
-//       foreign_table:'Post'
-//     }
-//   ],
-//   definition: {
-//         columns: [
-//           {
-//             name: "id",
-//             dataType: "bigincrements",
-//           },
-//           {
-//             name: "name",
-//             dataType: "string",
-
-//           },
-//         ]
-//       }
-// },
-
-// {
-//   schemaName:"Post",
-//   relationships:[
-//     {
-//       key:'belongsTo',
-//       local_key:user_id, // id
-//       foreign_key:id, // user_id
-//       foreign_table:'User',
-//     }
-//   ],
-//   definition: {
-//         columns: [
-//           {
-//             name: "id",
-//             dataType: "bigincrements",
-
-//           },
-//           {
-//             name: "title",
-//             dataType: "string",
-
-//           },
-//           {
-//             name: "user_id",
-//             dataType: "biginteger",
-//           },
-//         ]
-// },
-// },
