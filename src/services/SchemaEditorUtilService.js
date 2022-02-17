@@ -1,4 +1,4 @@
-import { INVERSE_RELATION } from "../contants/Relationships";
+import { INVERSE_RELATION, RELATIONSHIPS } from "../contants/Relationships";
 
 export const integrateTablesRelations = ({
   tables,
@@ -15,10 +15,6 @@ export const integrateTablesRelations = ({
         );
       });
     });
-    console.log(
-      "deleted belgonsTo key from tables",
-      JSON.parse(JSON.stringify(tables))
-    );
   }
 
   selectedTable.relationships.forEach((relation) => {
@@ -45,5 +41,13 @@ export const integrateTablesRelations = ({
         // name: tables[foreignTableIndex].tableName.slice(0, tables[foreignTableIndex].tableName.length - 1)
       });
     }
+  });
+};
+
+export const removeAllRelationsOfTable = ({ tables, selectedTable }) => {
+  tables.forEach((table) => {
+    table.relationships = table.relationships.filter((relationship) => {
+      return relationship.foreign_table_id !== selectedTable.id;
+    });
   });
 };

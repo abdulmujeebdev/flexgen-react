@@ -13,8 +13,18 @@ import { MODIFIER } from "../../contants/ColumnModifiers";
 import { RelationshipTablesDropdown } from "./RelationshipTablesDropdown";
 import { RelationshipDropdown } from "./RelationshipDropdown";
 import { INVERSE_RELATION } from "../../contants/Relationships";
+import {
+  toggleColumnModifier,
+  validateTableForm,
+} from "../../services/TableModalUtilService";
 
-const TableModal = ({ closeModal, onSubmit, tables, selectedTable }) => {
+const TableModal = ({
+  closeModal,
+  onSubmit,
+  tables,
+  selectedTable,
+  onDeleteTable,
+}) => {
   const tableId = useRef(selectedTable.id || Math.floor(Math.random() * 1000));
   const initialRelationData = {
     local_table_id: tableId.current,
@@ -31,13 +41,6 @@ const TableModal = ({ closeModal, onSubmit, tables, selectedTable }) => {
       ? [...selectedTable.relationships]
       : [initialRelationData]
   );
-
-  // Column functions
-
-  const updateColumn = (value, index, field) => {
-    columns[index][field] = value;
-    setColumns([...columns]);
-  };
 
   const addColumn = () => {
     setColumns([...columns, {}]);
@@ -56,28 +59,14 @@ const TableModal = ({ closeModal, onSubmit, tables, selectedTable }) => {
     if (!columns[index].modifiers) {
       columns[index].modifiers = [];
     }
-    const modifierIndex = columns[index].modifiers.findIndex(
-      (modifierDetail) => modifierDetail.name === modifierValue
-    );
-    if (modifierIndex !== -1) {
-      columns[index].modifiers.splice(modifierIndex, 1);
-    } else {
-      if (modifierValue === MODIFIER.PRIMARY) {
-        for (const column of columns) {
-          if (!column.modifiers || column.modifiers.length === 0) continue;
-          for (const modifier of column.modifiers) {
-            if (modifier.name === MODIFIER.PRIMARY) {
-              alert("Primary key is already selected");
-              return;
-            }
-          }
-        }
-      }
-      columns[index].modifiers.push({
-        name: modifierValue,
-      });
+    const updatedColumns = toggleColumnModifier({
+      index,
+      modifierValue,
+      columns,
+    });
+    if (updatedColumns) {
+      setColumns([...updatedColumns]);
     }
-    setColumns([...columns]);
   };
 
   // Relation ship functions
@@ -134,14 +123,17 @@ const TableModal = ({ closeModal, onSubmit, tables, selectedTable }) => {
       alert("Can't submit empty column");
       return;
     }
+    const isValid = validateTableForm(columns);
+    if (!isValid) return;
 
     const allRelationships = relationships.filter(
       (relationship) => !!relationship.foreign_table && !!relationship.key
     );
     const data = {
       id: tableId.current,
-      schemaName: modalName[0].toUpperCase() + modalName.slice(1),
-      tableName: modalName.toLowerCase(), // + "s"
+      schemaName:
+        modalName[0].toUpperCase() + modalName.slice(1).replaceAll(" ", ""),
+      tableName: modalName.toLowerCase().replaceAll(" ", ""), // + "s"
       relationships: allRelationships,
       definition: {
         columns,
@@ -158,10 +150,13 @@ const TableModal = ({ closeModal, onSubmit, tables, selectedTable }) => {
     >
       <h1>Entity Options</h1>
       <h5>Category, Collection: Categories, Table: catogries</h5>
-      <FontAwesomeIcon
-        icon={faTrashAlt}
-        className="delete-icon delete-table cursor-pointer"
-      />
+      {selectedTable.tableName && (
+        <FontAwesomeIcon
+          icon={faTrashAlt}
+          className="delete-icon delete-table cursor-pointer"
+          onClick={onDeleteTable}
+        />
+      )}
 
       <br />
       <Form>
@@ -171,7 +166,7 @@ const TableModal = ({ closeModal, onSubmit, tables, selectedTable }) => {
             type="text"
             placeholder="Enter Modal Name"
             value={modalName}
-            onChange={(e) => setModalName(e.target.value)}
+            onChange={(e) => setModalName(e.target.value.replaceAll(" ", ""))}
           />
         </Form.Group>
 
@@ -184,7 +179,12 @@ const TableModal = ({ closeModal, onSubmit, tables, selectedTable }) => {
                   <Form.Control
                     placeholder="Field Name"
                     value={column.name || ""}
-                    onChange={(e) => updateColumn(e.target.value, i, "name")}
+                    onChange={(e) => {
+                      columns[i].name = e.target.value
+                        .replaceAll(" ", "")
+                        .toLowerCase();
+                      setColumns([...columns]);
+                    }}
                   />
                 </Col>
                 <Col>
@@ -193,7 +193,8 @@ const TableModal = ({ closeModal, onSubmit, tables, selectedTable }) => {
                     value={column.dataType || ""}
                     onChange={(e) => {
                       if (e.target.value) {
-                        updateColumn(e.target.value, i, "dataType");
+                        columns[i].dataType = e.target.value;
+                        setColumns([...columns]);
                       }
                     }}
                   >

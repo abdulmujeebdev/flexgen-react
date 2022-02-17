@@ -4,7 +4,10 @@ import { Button } from "react-bootstrap";
 import ConnectElements from "react-connect-elements";
 import TabelModal from "../../components/TableModal/TableModal";
 import SchemaTable from "../../components/SchemaTable/SchemaTable";
-import { integrateTablesRelations } from "../../services/SchemaEditorUtilService";
+import {
+  integrateTablesRelations,
+  removeAllRelationsOfTable,
+} from "../../services/SchemaEditorUtilService";
 import { INVERSE_RELATION } from "../../contants/Relationships";
 
 const SchemaEditor = () => {
@@ -84,21 +87,26 @@ const SchemaEditor = () => {
     setSelectedTable({});
   };
 
-  const publishSchema = () => {
-    //   fetch('http://127.0.0.1:3333/create-migration', {
-    //     method: 'POST',
-    //     headers: {
-    //       'Content-Type': 'application/json',
-    //     },
-    //     body: JSON.stringify({
-    //       tables: tables,
-    //     }),
-    //   })
-    //     .then((res) => res.json())
-    //     .then((response) => {
-    //       console.log('respnose', response)
-    //     })
-    //     .catch((err) => console.log('err', err))
+  const deleteTable = () => {
+    if (!selectedTable.tableName) return;
+    const updatedTables = tables.filter(
+      (table) => table.id !== selectedTable.id
+    );
+    removeAllRelationsOfTable({ tables: updatedTables, selectedTable });
+    setTables(updatedTables);
+    setShowTableModal(false);
+    setSelectedTable({});
+  };
+
+  const downloadSchema = () => {
+    const a = document.createElement("a");
+    const blob = new Blob([JSON.stringify(tables, null, 4)], {
+      type: "application/json",
+    });
+    const url = URL.createObjectURL(blob);
+    a.setAttribute("href", url);
+    a.setAttribute("download", `crud_gen_${Date.now()}.json`);
+    a.click();
   };
 
   console.log("selectedTable", selectedTable);
@@ -122,7 +130,7 @@ const SchemaEditor = () => {
           <Button
             variant="outline-success"
             className="main-btn"
-            onClick={publishSchema}
+            onClick={downloadSchema}
           >
             <i className="fas fa-download"></i>
             Download JSON
@@ -163,6 +171,7 @@ const SchemaEditor = () => {
             setSelectedTable({});
           }}
           onSubmit={addOrUpdateTable}
+          onDeleteTable={deleteTable}
         />
       )}
     </div>
